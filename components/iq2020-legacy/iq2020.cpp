@@ -84,7 +84,7 @@ void IQ2020Component::setup() {
 #endif
 	
 	// Send initial polling commands
-	next_poll = ::millis() + 5000;
+	next_poll = (esp_timer_get_time() / 1000ULL) + 5000;
 	pollState();
 }
 
@@ -95,7 +95,7 @@ void IQ2020Component::loop() {
 	this->write();
 	this->cleanup();
 
-	unsigned long now = ::millis();
+	unsigned long now = (esp_timer_get_time() / 1000ULL);
 	// Check if there is any pending commands that need retry
 	if ((next_retry_count > 0) && (next_retry < now)) {
 		for (int switchid = 0; switchid < SWITCHCOUNT; switchid++) {
@@ -103,7 +103,7 @@ void IQ2020Component::loop() {
 				ESP_LOGE(TAG, "Retry switch %d set to %d", switchid, switch_pending[switchid]);
 				switchAction(switchid, switch_pending[switchid]); // Try again
 				next_retry_count--; // Setup for the next retry
-				next_retry = ::millis() + SWITCH_RETRY_TIME;
+				next_retry = (esp_timer_get_time() / 1000ULL) + SWITCH_RETRY_TIME;
 				break; // Only retry one command
 			}
 		}
@@ -113,7 +113,7 @@ void IQ2020Component::loop() {
 				ESP_LOGE(TAG, "Retry select %d set to %d", selectid, select_pending[selectid]);
 				selectAction(selectid, select_pending[selectid]); // Try again
 				next_retry_count--; // Setup for the next retry
-				next_retry = ::millis() + SWITCH_RETRY_TIME;
+				next_retry = (esp_timer_get_time() / 1000ULL) + SWITCH_RETRY_TIME;
 				break; // Only retry one command
 			}
 		}
@@ -124,7 +124,7 @@ void IQ2020Component::loop() {
 				ESP_LOGE(TAG, "Retry number %d set to %d", numberid, number_pending[numberid]);
 				numberAction(numberid, number_pending[numberid]); // Try again
 				next_retry_count--; // Setup for the next retry
-				next_retry = ::millis() + SWITCH_RETRY_TIME;
+				next_retry = (esp_timer_get_time() / 1000ULL) + SWITCH_RETRY_TIME;
 				break; // Only retry one command
 			}
 		}
@@ -353,7 +353,7 @@ int IQ2020Component::processIQ2020Command() {
 			if (this->connectionkit_sensor_) { this->connectionkit_sensor_->publish_state(true); }
 #endif
 		}
-		connectionKit = ::millis();
+		connectionKit = (esp_timer_get_time() / 1000ULL);
 
 		//ESP_LOGD(TAG, "SCK CMD Data, len=%d, cmd=%02x%02x", cmdlen, processingBuffer[5], processingBuffer[6]);
 	}
@@ -671,7 +671,7 @@ int IQ2020Component::processIQ2020Command() {
 								//ESP_LOGD(TAG, "** MOVE CYCLE UP %d from %d to %d", i, c, select_pending[SELECT_LIGHTS_CYCLE_SPEED]);
 								unsigned char cmd[] = { 0x17, 0x02, (unsigned char)i, 0x07 };
 								sendIQ2020Command(0x01, 0x1F, 0x40, cmd, sizeof(cmd)); // Faster cycle
-								next_poll = ::millis() + 100;
+								next_poll = (esp_timer_get_time() / 1000ULL) + 100;
 								changes++;
 								c++;
 							}
@@ -679,7 +679,7 @@ int IQ2020Component::processIQ2020Command() {
 								//ESP_LOGD(TAG, "** MOVE CYCLE DOWN %d from %d to %d", i, c, select_pending[SELECT_LIGHTS_CYCLE_SPEED]);
 								unsigned char cmd[] = { 0x17, 0x02, (unsigned char)i, 0x06 };
 								sendIQ2020Command(0x01, 0x1F, 0x40, cmd, sizeof(cmd)); // Slower cycle
-								next_poll = ::millis() + 100;
+								next_poll = (esp_timer_get_time() / 1000ULL) + 100;
 								changes++;
 								c--;
 							}
@@ -743,15 +743,15 @@ int IQ2020Component::processIQ2020Command() {
 				if (temp_celsius) { g_iq2020_climate->updateTempsC(target_temp, current_temp, temp_action); }
 				else { g_iq2020_climate->updateTempsF(target_temp, current_temp, temp_action); }
 			}
-			next_poll = ::millis() + 5000; // Perform state polling in the next 5 seconds to update heater status.
+			next_poll = (esp_timer_get_time() / 1000ULL) + 5000; // Perform state polling in the next 5 seconds to update heater status.
 		}
 
 		if (((cmdlen == 140) && (processingBuffer[5] == 0x02) && (processingBuffer[6] == 0x56)) || ((cmdlen == 123) && (processingBuffer[5] == 0x02) && (processingBuffer[6] == 0x55))) {
 			// This is the main status data (jets, temperature)
 #ifdef USE_SELECT
-			if (!versionstr.empty() && ((select_state[SELECT_AUDIO_SOURCE] != NOT_SET) || (got_audio_data > 3))) { next_poll = ::millis() + (this->polling_rate_ * 1000); } // Next poll
+			if (!versionstr.empty() && ((select_state[SELECT_AUDIO_SOURCE] != NOT_SET) || (got_audio_data > 3))) { next_poll = (esp_timer_get_time() / 1000ULL) + (this->polling_rate_ * 1000); } // Next poll
 #else
-			if (!versionstr.empty()) { next_poll = ::millis() + (this->polling_rate_ * 1000); } // Next poll
+			if (!versionstr.empty()) { next_poll = (esp_timer_get_time() / 1000ULL) + (this->polling_rate_ * 1000); } // Next poll
 #endif
 
 			// Read state flags
@@ -958,7 +958,7 @@ void IQ2020Component::switchAction(unsigned int switchid, int state) {
 		switch_pending[SWITCH_LIGHTS] = state;
 		unsigned char cmd[] = { 0x17, 0x02, 0x04, (state != 0) ? (unsigned char)0x11 : (unsigned char)0x10, 0x00 };
 		sendIQ2020Command(0x01, 0x1F, 0x40, cmd, sizeof(cmd)); // Turn on/off lights
-		next_poll = ::millis() + 100;
+		next_poll = (esp_timer_get_time() / 1000ULL) + 100;
 		break;
 	}
 	case SWITCH_SPALOCK: { // Spa Lock Switch
@@ -1028,7 +1028,7 @@ void IQ2020Component::switchAction(unsigned int switchid, int state) {
 	}
 	// If the command does not get confirmed, setup to try again
 	next_retry_count += SWITCH_RETRY_COUNT;
-	next_retry = ::millis() + SWITCH_RETRY_TIME;
+	next_retry = (esp_timer_get_time() / 1000ULL) + SWITCH_RETRY_TIME;
 }
 
 #ifdef USE_SELECT
@@ -1045,7 +1045,7 @@ void IQ2020Component::selectAction(unsigned int selectid, int state) {
 	case SELECT_LIGHTS_CYCLE_SPEED: // Lights cycle speed
 	{
 		select_pending[selectid] = state;
-		next_poll = ::millis() + 100;
+		next_poll = (esp_timer_get_time() / 1000ULL) + 100;
 		return;
 	}
 	case SELECT_LIGHTS1_COLOR:
@@ -1081,13 +1081,13 @@ void IQ2020Component::selectAction(unsigned int selectid, int state) {
 				current++;
 			}
 		}
-		if (cmdsent == 1) { next_poll = ::millis() + 100; }
+		if (cmdsent == 1) { next_poll = (esp_timer_get_time() / 1000ULL) + 100; }
 		return; // Don't do the normal retry logic.
 	}
 	}
 	// If the command does not get confirmed, setup to try again
 	next_retry_count += SWITCH_RETRY_COUNT;
-	next_retry = ::millis() + SWITCH_RETRY_TIME;
+	next_retry = (esp_timer_get_time() / 1000ULL) + SWITCH_RETRY_TIME;
 }
 #endif
 
@@ -1175,14 +1175,14 @@ void IQ2020Component::numberAction(unsigned int numberid, int value) {
 				current++;
 			}
 		}
-		if (cmdsent == 1) { next_poll = ::millis() + 100; }
+		if (cmdsent == 1) { next_poll = (esp_timer_get_time() / 1000ULL) + 100; }
 		return; // Don't do the normal retry logic.
 	}
 	}
 
 	// If the command does not get confirmed, setup to try again
 	next_retry_count += SWITCH_RETRY_COUNT;
-	next_retry = ::millis() + SWITCH_RETRY_TIME;
+	next_retry = (esp_timer_get_time() / 1000ULL) + SWITCH_RETRY_TIME;
 }
 #endif
 
