@@ -1,3 +1,4 @@
+#include "esp_timer.h"
 #include "iq2020.h"
 #include "iq2020_fan.h"
 #include "iq2020_switch.h"
