@@ -77,6 +77,7 @@ public:
 	void set_freshwater_emulation(bool freshwater_emulation) { this->freshwater_emulation_ = freshwater_emulation; }
 	void set_audio_emulation(bool audio_emulation) { this->audio_emulation_ = audio_emulation; }
 	void set_active(bool active) { this->active_ = active; setSwitchState(SWITCH_ACTIVE, active_); }
+	void set_old_clock(bool old_clock) { this->old_clock_ = old_clock; }
 	void set_polling_rate(int polling_rate) { this->polling_rate_ = polling_rate; }
 #ifdef USE_BINARY_SENSOR
 	void set_connected_sensor(esphome::binary_sensor::BinarySensor *connected) { this->connected_sensor_ = connected; }
@@ -118,6 +119,7 @@ public:
 	void set_pcb_c_temperature_sensor(esphome::sensor::Sensor *sensor) { this->pcb_c_temperature_sensor_ = sensor; }
 	void set_buttons_sensor(esphome::sensor::Sensor *sensor) { this->buttons_sensor_ = sensor; }
 	void set_logo_lights_sensor(esphome::sensor::Sensor *sensor) { this->logo_lights_sensor_ = sensor; }
+	void set_logo_lights_raw_sensor(esphome::sensor::Sensor *sensor) { this->logo_lights_raw_sensor_ = sensor; }
 	void set_lights_intensity_sensor(esphome::sensor::Sensor *sensor) { this->lights_intensity_sensor_ = sensor; }
 	void set_lights_intensity_underwater_sensor(esphome::sensor::Sensor *sensor) { this->lights_intensity_underwater_sensor_ = sensor; }
 	void set_lights_intensity_bartop_sensor(esphome::sensor::Sensor *sensor) { this->lights_intensity_bartop_sensor_ = sensor; }
@@ -135,9 +137,11 @@ public:
 	void set_iq_chlorine_sensor(esphome::sensor::Sensor *sensor) { this->iq_chlorine_sensor_ = sensor; }
 	void set_iq_ph_sensor(esphome::sensor::Sensor *sensor) { this->iq_ph_sensor_ = sensor; }
 	void set_iq_hoursleft_sensor(esphome::sensor::Sensor *sensor) { this->iq_hoursleft_sensor_ = sensor; }
+	void set_rtc_timestamp_sensor(esphome::sensor::Sensor *sensor) { this->rtc_timestamp_sensor_ = sensor; }
 #endif
 #ifdef USE_TEXT_SENSOR
 	void set_version_sensor(esphome::text_sensor::TextSensor *text) { this->version_sensor_ = text; }
+	void set_rtc_datetime_sensor(esphome::text_sensor::TextSensor *text) { this->rtc_datetime_sensor_ = text; }
 #endif
 
 	void setup() override;
@@ -193,6 +197,7 @@ protected:
 	bool freshwater_emulation_;
 	bool audio_emulation_;
 	bool active_;
+	bool old_clock_;
 	unsigned char audio_module_address = 0x33; // There are two audio modules at 0x33 or 0x1D.
 	int polling_rate_;
 
@@ -236,6 +241,7 @@ protected:
 	esphome::sensor::Sensor *pcb_c_temperature_sensor_;
 	esphome::sensor::Sensor *buttons_sensor_;
 	esphome::sensor::Sensor *logo_lights_sensor_;
+	esphome::sensor::Sensor *logo_lights_raw_sensor_;
 	esphome::sensor::Sensor *lights_intensity_sensor_;
 	esphome::sensor::Sensor *lights_intensity_underwater_sensor_;
 	esphome::sensor::Sensor *lights_intensity_bartop_sensor_;
@@ -253,9 +259,11 @@ protected:
 	esphome::sensor::Sensor *iq_chlorine_sensor_;
 	esphome::sensor::Sensor *iq_ph_sensor_;
 	esphome::sensor::Sensor *iq_hoursleft_sensor_;
+	esphome::sensor::Sensor *rtc_timestamp_sensor_;
 #endif
 #ifdef USE_TEXT_SENSOR
 	esphome::text_sensor::TextSensor *version_sensor_;
+	esphome::text_sensor::TextSensor *rtc_datetime_sensor_;
 #endif
 
 	std::unique_ptr<uint8_t[]> buf_{};

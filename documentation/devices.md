@@ -64,6 +64,38 @@ uart:
   baud_rate: 38400
 ```
 
+# Industrial ESP32-S3 Control Board
+
+<img width="800" height="544" alt="image" src="https://github.com/user-attachments/assets/b47dbfeb-c8c4-4d53-8268-9baee3f004d3" />
+
+Another option is to use the following device:
+
+- [Amazon US Link](https://www.amazon.com/Industrial-Communication-Interfaces-Bluetooth-Protection/dp/B0FN7VZ8H7)
+- [Amazon UK Link](https://www.amazon.co.uk/dp/B0FN4LWLH9)
+- [Device Wiki](https://www.waveshare.com/wiki/ESP32-S3-RS485-CAN)
+
+It's not as compact as the devices above, but may be more easily available with fast overnight delivery. The wiring looks like this:
+
+<img width="1202" height="374" alt="image" src="https://github.com/user-attachments/assets/088514e9-91a9-43c4-a3ba-167db5b9f02e" />
+
+In the ESP-Home configuration, you will need to use the following settings. Note the GPIO pin numbers and the `flow_control_pin`.
+
+```
+uart:
+  id: SpaConnection
+  tx_pin: GPIO17
+  rx_pin: GPIO18
+  baud_rate: 38400
+  parity: NONE
+  stop_bits: 1
+  rx_buffer_size: 1024
+
+iq2020:
+  uart_id: SpaConnection
+  flow_control_pin: GPIO21
+  port: 1234
+```
+
 # ESP32 + RS485MAX
 
 I don't suggest this setup as it's not as nice as the ones above and you will need to do extra work to power the ESP32 and RS485MAX modules using the 12v from the hot tub or have a separate power source.
@@ -94,3 +126,12 @@ iq2020:
 ```
 
 This said, if you have a setup like this that works. Please let me know so I can update this section. This integration should lower the `flow_control_pin` when receiving and raise it when transmitting.
+
+
+# Creating a Correct Cable
+
+The current recommandation for most people is to just use 4 breadboard cables to connect the ESP32 to the Hottub. It's easy and works perfectly well and you get more breadboard cables for other projects. I have not done this myself, but it's possible to create your own "correct" cable. The connector you need is part number 3-644540-8, you can find it on [DigiKey here](https://www.digikey.com/en/products/detail/te-connectivity-amp-connectors/3-644540-8/698326).
+
+Alternatively, somone suggested using TE Connectivity part number 1375820-8 with terminals 1375819-3. These are available from most electronics retailers such as Mouser, Farnell, Digikey, RS. These can be crimped with an inexpensive crimper designed for small terminals (e.g. Engineer PA-09).
+
+If you try this, please let us know your experience and send pictures!

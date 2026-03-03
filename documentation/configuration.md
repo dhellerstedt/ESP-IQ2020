@@ -49,20 +49,22 @@ iq2020:
 # Feel free to remove any sensor that are not relevant for your hot tub.
 sensor:
   - platform: iq2020
+  # Temperature
     current_f_temperature:
       name: Current Temperature
     target_f_temperature:
       name: Target Temperature
     outlet_f_temperature:
       name: Heater Outlet
+    pcb_f_temperature:
+      name: Controller Temperature
+    # Power
     power_l1:
       name: Pumps Power
     power_heater:
-      name: Power Heater
+      name: Controller Power
     power_l2:
       name: Heater Power
-    pcb_f_temperature:
-      name: Controller Temperature
 
 switch:
   - platform: iq2020
@@ -202,6 +204,9 @@ button:
 binary_sensor:    
   - platform: status
     name: ESP Status
+  - platform: iq2020
+    salt_level_confirmed:
+      name: Salt Level Confirmed
 
 # If using celsius units on the hot tub remote, replace _f_ with _c_ in the three entries below.
 # Feel free to remove any sensor that are not relevent for your hot tub.
@@ -250,23 +255,26 @@ sensor:
     power_on_counter:
       name: Power On Counter
 
-    #Energy sensors
+    #Power sensors
     power_l1:
-      name: Pump Power
+      name: Pumps Power
+      id: power_l1
     power_heater:
-      name: Small Heater Power
+      name: Controller Power
+      id: power_heater
     power_l2:
       name: Heater Power
+      id: power_l2
     voltage_l1:
       name: Voltage L1
     voltage_heater:
-      name: Voltage Heater
+      name: Voltage Controller
     voltage_l2:
       name: Voltage L2
     current_l1:
       name: Current L1
     current_heater:
-      name: Current Heater
+      name: Current Controller
     current_l2:
       name: Current L2
 
@@ -451,20 +459,18 @@ text_sensor:
     icon: "mdi:timer-sand"
     lambda: |-
       int seconds = round(id(${device}_total_runtime).state);
-      int years = seconds / (24 * 3600);
-      int months = seconds / (24 * 3600);
       int days = seconds / (24 * 3600);
       seconds = seconds % (24 * 3600);
       int hours = seconds / 3600;
       seconds = seconds % 3600;
-      int minutes = seconds /  60;
+      int minutes = seconds / 60;
       seconds = seconds % 60;
-        return {
-          ((days ? String(days) + " days, ": "") +
-          (hours ? String(hours) + ":": "") +
-          (minutes ? String(minutes) + ":": "") +
-          (String(seconds)) 
-          ).c_str()};
+      std::string result;
+      if (days) result += std::to_string(days) + " days, ";
+      if (hours) result += std::to_string(hours) + ":";
+      if (minutes) result += std::to_string(minutes) + ":";
+      result += std::to_string(seconds);
+      return result;
   - platform: template
     id: total_runtime_$device_1
     name: "Total Runtime_$device_1"
@@ -472,20 +478,18 @@ text_sensor:
     icon: "mdi:timer-sand"
     lambda: |-
       int seconds = round(id(${device_1}_total_runtime).state);
-      int years = seconds / (24 * 3600);
-      int months = seconds / (24 * 3600);
       int days = seconds / (24 * 3600);
       seconds = seconds % (24 * 3600);
       int hours = seconds / 3600;
       seconds = seconds % 3600;
-      int minutes = seconds /  60;
+      int minutes = seconds / 60;
       seconds = seconds % 60;
-        return {
-          ((days ? String(days) + " days, ": "") +
-          (hours ? String(hours) + ":": "") +
-          (minutes ? String(minutes) + ":": "") +
-          (String(seconds)) 
-          ).c_str()};
+      std::string result;
+      if (days) result += std::to_string(days) + " days, ";
+      if (hours) result += std::to_string(hours) + ":";
+      if (minutes) result += std::to_string(minutes) + ":";
+      result += std::to_string(seconds);
+      return result;
   - platform: template
     id: total_runtime_$device_2
     name: "Total Runtime_$device_2"
@@ -493,20 +497,18 @@ text_sensor:
     icon: "mdi:timer-sand"
     lambda: |-
       int seconds = round(id(${device_2}_total_runtime).state);
-      int years = seconds / (24 * 3600);
-      int months = seconds / (24 * 3600);
       int days = seconds / (24 * 3600);
       seconds = seconds % (24 * 3600);
       int hours = seconds / 3600;
       seconds = seconds % 3600;
-      int minutes = seconds /  60;
+      int minutes = seconds / 60;
       seconds = seconds % 60;
-        return {
-          ((days ? String(days) + " days, ": "") +
-          (hours ? String(hours) + ":": "") +
-          (minutes ? String(minutes) + ":": "") +
-          (String(seconds)) 
-          ).c_str()};
+      std::string result;
+      if (days) result += std::to_string(days) + " days, ";
+      if (hours) result += std::to_string(hours) + ":";
+      if (minutes) result += std::to_string(minutes) + ":";
+      result += std::to_string(seconds);
+      return result;
   - platform: template
     id: total_runtime_$device_3
     name: "Total Runtime_$device_3"
@@ -514,20 +516,18 @@ text_sensor:
     icon: "mdi:timer-sand"
     lambda: |-
       int seconds = round(id(${device_3}_total_runtime).state);
-      int years = seconds / (24 * 3600);
-      int months = seconds / (24 * 3600);
       int days = seconds / (24 * 3600);
       seconds = seconds % (24 * 3600);
       int hours = seconds / 3600;
       seconds = seconds % 3600;
-      int minutes = seconds /  60;
+      int minutes = seconds / 60;
       seconds = seconds % 60;
-        return {
-          ((days ? String(days) + " days, ": "") +
-          (hours ? String(hours) + ":": "") +
-          (minutes ? String(minutes) + ":": "") +
-          (String(seconds)) 
-          ).c_str()};
+      std::string result;
+      if (days) result += std::to_string(days) + " days, ";
+      if (hours) result += std::to_string(hours) + ":";
+      if (minutes) result += std::to_string(minutes) + ":";
+      result += std::to_string(seconds);
+      return result;
   - platform: template
     id: total_runtime_$device_4
     name: "Total Runtime_$device_4"
@@ -535,20 +535,18 @@ text_sensor:
     icon: "mdi:timer-sand"
     lambda: |-
       int seconds = round(id(${device_4}_total_runtime).state);
-      int years = seconds / (24 * 3600);
-      int months = seconds / (24 * 3600);
       int days = seconds / (24 * 3600);
       seconds = seconds % (24 * 3600);
       int hours = seconds / 3600;
       seconds = seconds % 3600;
-      int minutes = seconds /  60;
+      int minutes = seconds / 60;
       seconds = seconds % 60;
-        return {
-          ((days ? String(days) + " days, ": "") +
-          (hours ? String(hours) + ":": "") +
-          (minutes ? String(minutes) + ":": "") +
-          (String(seconds)) 
-          ).c_str()};
+      std::string result;
+      if (days) result += std::to_string(days) + " days, ";
+      if (hours) result += std::to_string(hours) + ":";
+      if (minutes) result += std::to_string(minutes) + ":";
+      result += std::to_string(seconds);
+      return result;
   - platform: template
     id: total_runtime_$device_5
     name: "Total Runtime_$device_5"
@@ -556,20 +554,18 @@ text_sensor:
     icon: "mdi:timer-sand"
     lambda: |-
       int seconds = round(id(${device_5}_total_runtime).state);
-      int years = seconds / (24 * 3600);
-      int months = seconds / (24 * 3600);
       int days = seconds / (24 * 3600);
       seconds = seconds % (24 * 3600);
       int hours = seconds / 3600;
       seconds = seconds % 3600;
-      int minutes = seconds /  60;
+      int minutes = seconds / 60;
       seconds = seconds % 60;
-        return {
-          ((days ? String(days) + " days, ": "") +
-          (hours ? String(hours) + ":": "") +
-          (minutes ? String(minutes) + ":": "") +
-          (String(seconds)) 
-          ).c_str()};
+      std::string result;
+      if (days) result += std::to_string(days) + " days, ";
+      if (hours) result += std::to_string(hours) + ":";
+      if (minutes) result += std::to_string(minutes) + ":";
+      result += std::to_string(seconds);
+      return result;
   - platform: template
     id: total_runtime_$device_6
     name: "Total Runtime_$device_6"
@@ -577,20 +573,18 @@ text_sensor:
     icon: "mdi:timer-sand"
     lambda: |-
       int seconds = round(id(${device_6}_total_runtime).state);
-      int years = seconds / (24 * 3600);
-      int months = seconds / (24 * 3600);
       int days = seconds / (24 * 3600);
       seconds = seconds % (24 * 3600);
       int hours = seconds / 3600;
       seconds = seconds % 3600;
-      int minutes = seconds /  60;
+      int minutes = seconds / 60;
       seconds = seconds % 60;
-        return {
-          ((days ? String(days) + " days, ": "") +
-          (hours ? String(hours) + ":": "") +
-          (minutes ? String(minutes) + ":": "") +
-          (String(seconds)) 
-          ).c_str()};
+      std::string result;
+      if (days) result += std::to_string(days) + " days, ";
+      if (hours) result += std::to_string(hours) + ":";
+      if (minutes) result += std::to_string(minutes) + ":";
+      result += std::to_string(seconds);
+      return result;
 ```
 
 ![image](https://github.com/Ylianst/ESP-IQ2020/assets/1319013/a9e5ae66-2a6f-4c07-8f1f-cb7c52e3e7d9)

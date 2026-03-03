@@ -57,6 +57,7 @@ CONF_SENSOR_PCB_F_TEMPERATURE = "pcb_f_temperature"
 CONF_SENSOR_PCB_C_TEMPERATURE = "pcb_c_temperature"
 CONF_SENSOR_BUTTONS = "buttons"
 CONF_SENSOR_LOGO_LIGHTS = "logo_lights"
+CONF_SENSOR_LOGO_LIGHTS_RAW = "logo_lights_raw"
 CONF_SENSOR_LIGHTS_INTENSITY = "lights_intensity"
 CONF_SENSOR_LIGHTS_INTENSITY_UNDERWATER = "lights_underwater_intensity"
 CONF_SENSOR_LIGHTS_INTENSITY_BARTOP = "lights_bartop_intensity"
@@ -74,6 +75,7 @@ CONF_SENSOR_IQ_VD = "iq_vd"
 CONF_SENSOR_IQ_CHLORINE = "iq_chlorine"
 CONF_SENSOR_IQ_PH = "iq_ph"
 CONF_SENSOR_IQ_HOURSLEFT = "iq_hoursleft"
+CONF_SENSOR_RTC_TIMESTAMP = "rtc_timestamp"
 
 CONF_IQ2020_SERVER = "iq2020_server"
 
@@ -284,6 +286,10 @@ CONFIG_SCHEMA = cv.Schema(
             accuracy_decimals=0,
             icon=ICON_LIGHTBULB
         ),
+        cv.Optional(CONF_SENSOR_LOGO_LIGHTS_RAW): sensor.sensor_schema(
+            accuracy_decimals=0,
+            icon=ICON_LIGHTBULB
+        ),
         cv.Optional(CONF_SENSOR_LIGHTS_INTENSITY): sensor.sensor_schema(
             accuracy_decimals=0,
             icon=ICON_LIGHTBULB
@@ -344,6 +350,13 @@ CONFIG_SCHEMA = cv.Schema(
         ),
         cv.Optional(CONF_SENSOR_IQ_HOURSLEFT): sensor.sensor_schema(
             accuracy_decimals=0
+        ),
+        cv.Optional(CONF_SENSOR_RTC_TIMESTAMP): sensor.sensor_schema(
+            unit_of_measurement="s",
+            accuracy_decimals=0,
+            state_class=STATE_CLASS_MEASUREMENT,
+            icon="mdi:clock-digital",
+            entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
         )
     }
 )
@@ -479,6 +492,10 @@ async def to_code(config):
         sens = await sensor.new_sensor(config[CONF_SENSOR_LOGO_LIGHTS])
         cg.add(server.set_logo_lights_sensor(sens))
 
+    if CONF_SENSOR_LOGO_LIGHTS_RAW in config:
+        sens = await sensor.new_sensor(config[CONF_SENSOR_LOGO_LIGHTS_RAW])
+        cg.add(server.set_logo_lights_raw_sensor(sens))
+
     if CONF_SENSOR_LIGHTS_INTENSITY in config:
         sens = await sensor.new_sensor(config[CONF_SENSOR_LIGHTS_INTENSITY])
         cg.add(server.set_lights_intensity_sensor(sens))
@@ -546,3 +563,7 @@ async def to_code(config):
     if CONF_SENSOR_IQ_HOURSLEFT in config:
         sens = await sensor.new_sensor(config[CONF_SENSOR_IQ_HOURSLEFT])
         cg.add(server.set_iq_hoursleft_sensor(sens))
+
+    if CONF_SENSOR_RTC_TIMESTAMP in config:
+        sens = await sensor.new_sensor(config[CONF_SENSOR_RTC_TIMESTAMP])
+        cg.add(server.set_rtc_timestamp_sensor(sens))

@@ -275,6 +275,15 @@ text_sensor:
 
 You can remove the `internal: true` line if you want the numeric value to be available in Home Assistant, otherwise you will have the "Logo Lights" shown with a text value.
 
+## Logo Lights Raw Value
+
+In addition to the logo light status sensor, there is another "raw" sensor that will get the value directly from the IQ2020. This is useful if you get unknown values from the normal logo light sensor and need get access to the internal value.
+
+```
+sensor:
+    logo_lights_raw:
+      name: Logo Lights Raw
+```
 
 ## Adding WIFI signal strength sensor
 
@@ -441,13 +450,30 @@ Once added, you can restart Home Assistant and you will have new sensors you can
 ![image](https://github.com/Ylianst/ESP-IQ2020/assets/1319013/ffa2b8ac-4193-411d-b864-b04e8ea1b068)
 
 
-## Power Usage Sensors
+## Energy Consumption Sensors
 
-Some IQ2020 boards will have electricity power usage sensors. In my case, I have 3 of them but not sure what to name them. I think there is one of the heater, one of the jets and one for the circulation pump but not sure. You can access them with the YAML below by adding to the `sensor:` section and adding a new `time:` section. Once done, you can add these new sensors to the Home Assistant energy dashboard.
+Some IQ2020 boards will have electricity power usage sensors. In my case, I have 3 of them but not sure what to name them. I think there is one of the heater, one of the jets and one for the circulation pump but not sure. You can create energy consumption sensors using them with the YAML below by adding power ids to the existing power sensors, adding the "total_daily_energy" platforms to the `sensor:` section and adding a new `time:` section. Once done, you can add these new sensors to the Home Assistant energy dashboard.
 
 <img width="2356" height="937" alt="482692679-de07c188-5e93-44ea-b19f-ac1e9d4396d2" src="https://github.com/user-attachments/assets/88109fb7-5da3-44b9-b6fc-6ace97968e76" />
 
-Here is the YAML:
+Here is the YAML to replace the existing sensors in the basic configuration to add power ids for the total daily energy platform:
+
+```
+sensor:
+  - platform: iq2020
+    # Power
+    power_l1:
+      name: Pumps Power
+      id: power_l1
+    power_heater:
+      name: Controller Power
+      id: power_heater
+    power_l2:
+      name: Heater Power
+      id: power_l2
+```
+
+Here is the YAML to add:
 
 ```
 # Enable time component to reset energy at midnight
@@ -486,4 +512,128 @@ sensor:
     filters:
       # Multiplication factor from W to kW is 0.001
       - multiply: 0.001
+```
+
+## ESP32 Changing Temperature
+
+In this section, we look at having the ESP32 computer change the temperature of the hottub at various times on it's own, without help from Home Assistant. This is interesting since your tub tub would be truly intependent. It does required the ESP32 to have access to the internet to get the correct time. Also, in the code below, the `target_temperature` is always in celsius, no matter what your hot tub or Home Assistant settings are. Thanks to user [mmcshea for this](https://github.com/Ylianst/ESP-IQ2020/issues/75#issuecomment-3667937767). One future alternative to this would be to use the clock in the IQ2020.
+
+```
+time:
+  - platform: sntp
+    id: sntp_time
+    timezone: America/Los_Angeles
+    on_time: 
+      - seconds: 0
+        minutes: 00
+        hours: 16
+        then:
+          - climate.control:
+              id: hottub_climate
+              target_temperature: 27
+          - logger.log: 
+              level: INFO
+              format: "4:00 PM, set temp to 27C or 80F"
+              tag: heartbeat
+      - seconds: 0
+        minutes: 0
+        hours: 21
+        then:
+          - climate.control:
+              id: hottub_climate
+              mode: HEAT
+              target_temperature: 39
+          - logger.log:
+              level: INFO
+              format: "9:00 PM, set temp t0 39C or 103F"
+              tag: heartbeat
+```
+
+## Real Time Clock
+
+Except for the very early IQ2020 boards, most of them have a battery backed real-time clock. So, you can set and read the time on these boards. Except for more recent models, the IQ2020 clock is not used much and so, never set to the right time. The ESP32 can set and read the IQ2020 clock and this can be useful is you want to perform time-based operations without the need for internet or Home Assistant to be a time source.
+
+To read the clock from the IQ2020 board, there are two sensors. One is text and the other is numeric. You probably want to add `internal: true` at some point since you don't really need to have Home Assistant track these values, it would just waste space in the Home Assistant database. First is a text sensor:
+
+```
+text_sensor:
+  - platform: iq2020
+    rtc_datetime:
+      name: "Real Time Clock"
+```
+
+<img width="378" height="49" alt="image" src="https://github.com/user-attachments/assets/6d180a33-bb1b-4abd-85ad-ff6cdd8b514e" />
+
+The second sensor is UNIX time:
+
+```
+sensor:
+  - platform: iq2020
+    rtc_timestamp:
+      name: "RTC Unix Timestamp"
+```
+
+<img width="386" height="49" alt="image" src="https://github.com/user-attachments/assets/70f23bd4-df5d-4429-8d64-060d886422c7" />
+
+To set the IQ2020 clock from Home Assistant you first need to add the following "service" in the "api:" section of the ESPHome configuration. This is what is looks like:
+
+```
+api:
+  encryption:
+    key: "xxxxxxxxxxxxxxxxxxxx"
+  services:
+    - service: set_hot_tub_time
+      variables:
+        hour: int
+        minute: int
+        second: int
+        year: int
+        month: int
+        day: int
+      then:
+        - lambda: |-
+            if (g_iq2020_main != nullptr) {
+              g_iq2020_main->setTime(hour, minute, second, year, month, day);
+            }
+```
+
+This will expose a new "set_hot_tub_time" method to Home Assistant. When called, the ESP32 will call the integration to send the clock set command to the IQ2020 board. Once your ESP32 is flashed, you can call the "set_hot_tub_time" method in Hoem Assistant. Here is a sample automation that when activated, will set the hottub to a specific date and time.
+
+```
+alias: Hot Tub Time Test
+description: ""
+triggers: []
+conditions: []
+actions:
+  - action: esphome.hot_tub_set_hot_tub_time
+    metadata: {}
+    data:
+      hour: 1
+      minute: 2
+      second: 3
+      year: 2025
+      month: 5
+      day: 31
+mode: single
+```
+
+The "metadata" does nothing and can be removed. To set the current time, you can do this:
+
+```
+alias: Hot Tub Time Test
+description: Syncs the hot tub clock
+triggers: []
+conditions: []
+actions:
+  - variables:
+      t: "{{ now().isoformat() }}"
+  - action: esphome.hot_tub_set_hot_tub_time
+    data:
+      hour: "{{ (t | as_datetime).hour | int }}"
+      minute: "{{ (t | as_datetime).minute | int }}"
+      second: "{{ (t | as_datetime).second | int }}"
+      year: "{{ (t | as_datetime).year | int }}"
+      month: "{{ (t | as_datetime).month | int }}"
+      day: "{{ (t | as_datetime).day | int }}"
+mode: single
 ```
