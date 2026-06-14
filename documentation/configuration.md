@@ -2,7 +2,7 @@
 
 This is the starter configuration most people should use. It has a basic set of sensors and you can improve from here. Make sure to put your own API, OTA and WIFI passwords. Change temperature units if needed, and don't forget to [change the GPIO pins](https://github.com/Ylianst/ESP-IQ2020/blob/main/documentation/devices.md) if you are not using a M5Stack. You also need to change the configuration if you have 1 or 2 jets and if the jets have different power levels.
 
-```
+```yaml
 esphome:
   name: hot-tub
   friendly_name: Hot Tub
@@ -123,7 +123,7 @@ text_sensor:
 
 NOT RECOMMANDED. Below is an example of a full configuration with most sensors turned on. This configuration is not recommanded for anyone, it's just an example to see what values are possible so you can use to cut & paste into you own configuration. The example below has a lot of ideas for enhancing sensors, using substitutions and more. As always, you are encouraged to adapt this configuration to your own needs. Images of the sensors below.
 
-```
+```yaml
 substitutions:
   celcius_farenheit: c
   device: jacuzzi
@@ -200,11 +200,20 @@ time:
 button:
   - platform: restart
     name: "ESP Restart"
+  - platform: iq2020
+    # Freshwater Salt only
+    name: Salt Test
+    datapoint: 0
+  - platform: iq2020
+    # Freshwater Salt only
+    name: Reset Salt Cartridge
+    datapoint: 1
     
 binary_sensor:    
   - platform: status
     name: ESP Status
   - platform: iq2020
+    # ACE/Freshwater Salt
     salt_level_confirmed:
       name: Salt Level Confirmed
 
@@ -221,8 +230,18 @@ sensor:
       name: Heater Outlet
     pcb_${celcius_farenheit}_temperature:
       name: Controller Temperature
+    # ACE/Freshwater Salt
     salt_content:
-      name: Salt Content
+      name: Salt Level
+    # Freshwater Salt only
+    salt_cartridge_age_days:
+      name: Salt Cartridge Age (Days)
+    # Freshwater Salt only
+    salt_generation_hours:
+      name: Salt Generation Hours
+    # Freshwater Salt only
+    salt_error_code:
+      name: Salt Error Code
 
     #Lifetime counters
     lifetime_runtime:
@@ -361,6 +380,7 @@ number:
     datapoint: 4
   #jacuzzi salt control
   - platform: iq2020
+    # ACE/Freshwater Salt
     id: salt_power
     name: Salt System Power
     datapoint: 5
@@ -452,6 +472,12 @@ text_sensor:
   - platform: iq2020
     versionstr:
       name: Version
+    # Freshwater Salt only
+    salt_module_status:
+      name: Salt Module Status
+    # Freshwater Salt only
+    salt_level_friendly:
+      name: Salt Level Friendly
   - platform: template
     id: total_runtime_$device
     name: "Total Runtime_$device"
@@ -594,7 +620,3 @@ text_sensor:
 ![image](https://github.com/Ylianst/ESP-IQ2020/assets/1319013/c5b25972-1409-4477-964a-1dc21645407e)
 
 ![image](https://github.com/Ylianst/ESP-IQ2020/assets/1319013/1561b409-8329-48f7-a581-f6841265b1d5)
-
-
-
-

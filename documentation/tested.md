@@ -46,7 +46,7 @@ Limelight	Glow (GLW)	2012, 2013, 2014, 2015, 2016, 2017
 
 <details><summary>Notable Settings</summary>
 
-```
+```yaml
 uart:
   id: SpaConnection
   tx_pin: GPIO26
@@ -80,7 +80,7 @@ fan:
 
 <details><summary>Notable Settings</summary>
   
-```
+```yaml
 uart:
   id: SpaConnection
   tx_pin: GPIO19
@@ -122,7 +122,7 @@ fan:
 - Version: 112T b5e1A002 v3.0
 - M5stack atom lite + Atomic RS485 base
 
-```
+```yaml
 sensor:
   lights_main_loop_speed:
     name: Lights Main Loop Speed
@@ -177,7 +177,7 @@ Also, light intensity is 0 to 3, not 0 to 5 like other models.
 
 <details><summary>Notable Settings</summary>
   
-```
+```yaml
 select:
   - platform: iq2020
     name: Color Underwater
@@ -273,7 +273,7 @@ Does no work. This hot tub seems to be using a older version of the IQ2020 board
 
 Yaml Changes Made in ESPHome
 
-```
+```yaml
 fan:
   - platform: iq2020
     name: Jets 1
@@ -330,7 +330,7 @@ Watkins P/N: 1303401-1 Rev K
 <details>
 <summary>Notable Settings</summary>
 
-```
+```yaml
 uart:
   id: SpaConnection
   tx_pin: GPIO26
@@ -764,7 +764,7 @@ Tiger River Spa Caspian with a 50hz Eagle board retrofit and this is the light c
 
 <details><summary>Notable Settings</summary>
   
-```
+```yaml
 select:
   - platform: iq2020
     name: Color Underwater
@@ -803,7 +803,7 @@ Regarding the control of the lights, I was able to update the firmware to the la
 
 <details><summary>Settings</summary>
 
-```
+```yaml
 select:
   - platform: iq2020
     name: Color Underwater
@@ -1022,7 +1022,7 @@ Worked using the m5stack-atom. Some changes for 2025 Rhythm -
 
 <details><summary>Full YAML</summary>
 
-```
+```yaml
 esphome:
   name: hot-tub
   friendly_name: Hot Tub
@@ -1226,7 +1226,7 @@ A few configuration changes: Jet 1 is two speed, Jet 2 is not used. Salt system 
 
 <details><summary>YAML Changes</summary>
 
-```
+```yaml
 sensor:
     salt_content:
     name: Salt Content
@@ -1265,7 +1265,7 @@ Status: Works. Used a DIN trail ESP32 device that was added to the [devices page
 <details>
 <summary>Configuration file</summary>
 
-```
+```yaml
 substitutions:
   celcius_farenheit: c
   device: jacuzzi
@@ -1844,3 +1844,511 @@ text_sensor:
 ## 2013 Hot Springs Vanguard
 
 Status: Works.
+
+## 2012 Hot Spot Relay (RELE)
+
+This tub has the Watkins IQ2020 P/N 1303401-2 REV.A board. I'm using the recommended hardware (ATOM Lite ESP32 + Tail485 module)
+
+<img width="5712" height="4284" alt="Image" src="https://github.com/user-attachments/assets/705e5278-d884-44a7-bc67-c358d7b9f37c" />
+<br>
+
+<img width="2147" height="1212" alt="hot_tub_serial" src="https://github.com/user-attachments/assets/819e7d2b-7392-4fae-83a5-615d7e9ee9da" />
+<br>
+
+With the stock firmware (V1.01S), I got some things kind of working. I could control the 2 speeds of pump 1, could read back temperatures and power usage of the heater but no lighting, no feedback of pumps, no control of pump 2, the thermostat feedback worked but I couldn't set the temperature. 
+
+I checked the traffic between the ESP & the IQ2020 with the DataViewer and wasn't seeing that much extra info.
+
+Then I found out there is [this website](https://backyardplus.com/parts/serv-flsh-virtual-control-box-software-update-hawk-or-eagle-sytems/) where you can buy a software update file + instructions based on the serial number of your hot tub. When I performed this update (easy when following the provided instructions), I got the board running on version V1.09S. 
+
+After this update, I got everything working! 
+
+- Lights on/off
+- Lights Colors
+- Lights Intensity
+- Color Cycle Speed
+- Clean Cycle
+- Jets 1: high & low speed
+- Jets 2: on/off
+- Temperature control + feedback
+- Temperature Lock
+- Spa Lock
+- Lots of feedback values
+
+<img width="671" height="673" alt="Image" src="https://github.com/user-attachments/assets/4e65abfd-3106-4847-a9ad-d2494524fa6f" />
+
+<details>
+<summary>ESP Home full YAML code</summary>
+
+```yaml
+esphome:
+  name: jacuzzi
+  friendly_name: Jacuzzi
+
+esp32:
+  board: m5stack-atom
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+  baud_rate: 0
+  level: DEBUG
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: ""
+
+ota:
+  - platform: esphome
+    password: ""
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Jacuzzi Fallback Hotspot"
+    password: ""
+
+
+external_components:
+  - source: github://ylianst/esp-iq2020
+
+# Make sure tx/rx pins are correct for your device.
+# GPIO26/32 is ok for M5Stack-ATOM + Tail485, look in GitHub devices link for your device.
+uart:
+  id: SpaConnection
+  tx_pin: GPIO26
+  rx_pin: GPIO32
+  baud_rate: 38400
+
+iq2020:
+   uart_id: SpaConnection
+   port: 1234
+   legacy_polling: true
+   polling_rate: 5
+
+# If using Celsius units on the hot tub remote, replace _f_ with _c_ in the three entries below.
+# Feel free to remove any sensor that are not relevant for your hot tub.
+sensor:
+  - platform: iq2020
+    # Temperature
+    current_c_temperature:
+      name: Current Temperature
+    target_c_temperature:
+      name: Target Temperature
+    outlet_c_temperature:
+      name: Heater Outlet
+    #Lifetime counters
+    lifetime_runtime:
+      name: Lifetime Runtime
+      id: jacuzzi_total_runtime
+    heater_total_runtime:
+      name: Heater Runtime
+      id: heater_total_runtime
+    lights_total_runtime:
+      name: Lights Runtime
+      id: lights_total_runtime      
+    jets1_total_runtime:
+      name: Jets 1 Runtime
+      id: jets1_total_runtime
+    jet1_low_total_runtime:
+      name: Jets 1 Low Runtime
+      id: jets1_low_total_runtime      
+    jets2_total_runtime:
+      name: Jets 2 Runtime
+      id: jets2_total_runtime      
+    power_on_counter:
+      name: Power On Counter
+
+    # Network 
+  - platform: wifi_signal # Reports the WiFi signal strength/RSSI in dB
+    name: "ESP WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+  - platform: copy # Reports the WiFi signal strength in %
+    source_id: wifi_signal_db
+    name: "ESP WiFi Signal Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+    device_class: ""
+
+    # ESP sensors 
+  - platform: uptime
+    name: ESP Uptime Sensor
+  - platform: internal_temperature
+    name: "ESP Internal Temperature"
+  - platform: template
+    id: esp_memory
+    icon: mdi:memory
+    name: ESP Free Memory
+    lambda: return heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024;
+    unit_of_measurement: 'kB'
+    state_class: measurement
+    entity_category: "diagnostic"
+
+switch:
+  - platform: iq2020
+    name: Lights
+    id: lights_switch
+    icon: "mdi:lightbulb"
+    datapoint: 0
+  - platform: iq2020
+    name: Spa Lock
+    id: spa_lock_switch
+    icon: "mdi:lock"
+    datapoint: 1
+  - platform: iq2020
+    name: Temperature Lock
+    id: temp_lock_switch
+    icon: "mdi:lock"
+    datapoint: 2
+  - platform: iq2020
+    name: Clean Cycle
+    id: clean_cycle_switch
+    icon: "mdi:vacuum"
+    datapoint: 3
+
+fan:
+  - platform: iq2020
+    name: Jets 1
+    id: jets1
+    icon: "mdi:turbine"
+    datapoint: 0
+    speeds: 2
+  - platform: iq2020
+    name: Jets 2
+    id: jets2
+    icon: "mdi:turbine"
+    datapoint: 1
+    speeds: 1
+
+select:
+  - platform: iq2020
+    name: Color Underwater
+    id: lights1_color
+    datapoint: 1
+    options:
+      - Blue
+      - Cyan
+      - Green
+      - White
+      - Yellow
+      - Red
+      - Violet
+  - platform: iq2020
+    name: Color Cycle Speed
+    id: lights_cycle_speed
+    datapoint: 5
+
+number:
+  - platform: iq2020
+    id: lights1_intensity
+    name: Intensity Underwater
+    datapoint: 7
+    maximum: 3
+
+# Set "celsius" to "true" if using celsius units.
+climate:
+  - platform: iq2020
+    name: Temperature
+    celsius: true
+
+text_sensor:
+  - platform: iq2020
+    versionstr:
+      name: Version
+
+```
+
+</details>
+
+## Caldera Seychelles 2026
+
+Modules: salt system, no audio, only underwater lights
+Firmware Version: EG25.20109E002BU25.2100A1
+Status: Works great using a Atom-lite and ATOMIC RS485 Base
+
+Both of the peripheral ports were used so I just ordered these ([Part1](https://www.mouser.com/ProductDetail/TE-Connectivity-AMP/640456-8?qs=%2F35zJ5USjomho1287DA4QA%3D%3D&countryCode=US&currencyCode=USD), [Part2](https://www.mouser.com/ProductDetail/TE-Connectivity/3-640440-8?qs=X1mjqRbeMc7kItVW1bFRdQ%3D%3D&countryCode=US&currencyCode=USD)) and made a pigtail from it.
+
+<details>
+<summary>Full config that adds the audio emulation for extra remote controls from the tub.</summary>
+
+```yaml
+esphome:
+  name: hot-tub
+  friendly_name: "Hot Tub"
+  comment: "Saychelles Hot Tub"
+
+esp32:
+  board: m5stack-atom
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: !secret esp_encryption_key
+
+ota:
+ - platform: esphome
+
+wifi:
+  ssid: !secret privateCloud_wifi_ssid
+  password: !secret privateCloud_wifi_password
+  fast_connect: !secret fast_connect
+  domain: .lan
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "${device_name}"
+    password: !secret ap_mode_pw
+
+captive_portal:
+
+external_components:
+  - source: github://ylianst/esp-iq2020
+
+# Make sure tx/rx pins are correct for your device.
+# GPIO19/22 for Atom Lite + RS485 module
+uart:
+  id: SpaConnection
+  tx_pin: GPIO19
+  rx_pin: GPIO22
+  baud_rate: 38400
+
+iq2020:
+   uart_id: SpaConnection
+   port: 1234
+   audio_emulation: true
+
+button:
+  - platform: restart
+    name: "Restart"
+
+# If using Celsius units on the hot tub remote, replace _f_ with _c_ in the three entries below.
+# Feel free to remove any sensor that are not relevant for your hot tub.
+sensor:
+  - platform: iq2020
+
+  # Temperature
+    current_f_temperature:
+      name: Current Temperature
+    target_f_temperature:
+      name: Target Temperature
+    outlet_f_temperature:
+      name: Heater Outlet
+    pcb_f_temperature:
+      name: Controller Temperature
+
+  # Power
+    power_l1:
+      name: Pumps Power
+    power_heater:
+      name: Controller Power
+    power_l2:
+      name: Heater Power
+    
+  # Salt
+    salt_content:
+      name: Salt Content
+
+  # Runtime
+    lifetime_runtime:
+      name: Lifetime Runtime
+      id: jacuzzi_total_runtime
+    heater_total_runtime:
+      name: Heater Runtime
+      id: heater_total_runtime
+    circulation_pump_total_runtime:
+      name: Circulation Pump Runtime
+      id: circulation_pump_total_runtime
+    lights_total_runtime:
+      name: Lights Runtime
+      id: lights_total_runtime      
+    jets1_total_runtime:
+      name: Jets 1 Runtime
+      id: jets1_total_runtime  
+    jets2_total_runtime:
+      name: Jets 2 Runtime
+      id: jets2_total_runtime
+    power_on_counter:
+      name: Power On Counter
+
+  # Lights
+    lights_underwater_intensity:
+      name: Light Underwater Intensity
+    lights_underwater_color:
+      name: Light Underwater Color
+
+  # Audio/other
+    buttons:
+      name: Buttons
+
+  - platform: wifi_signal
+    name: "WiFi signal"
+    update_interval: 60s
+
+switch:
+  - platform: iq2020
+    name: Lights
+    id: lights_switch
+    icon: "mdi:lightbulb"
+    datapoint: 0
+  - platform: iq2020
+    name: Spa Lock
+    id: spa_lock_switch
+    icon: "mdi:lock"
+    datapoint: 1
+  - platform: iq2020
+    name: Temperature Lock
+    id: temp_lock_switch
+    icon: "mdi:lock"
+    datapoint: 2
+  - platform: iq2020
+    name: Clean Cycle
+    id: clean_cycle_switch
+    icon: "mdi:vacuum"
+    datapoint: 3
+  - platform: iq2020
+    name: Summer Timer
+    id: summer_timer_switch
+    icon: "mdi:sun-clock"
+    datapoint: 4
+  # Salt System
+  - platform: iq2020
+    name: Salt System Boost
+    id: salt_system_boost
+    datapoint: 8
+
+  # Audio System
+  - platform: iq2020
+    name: Audio Power
+    id: audio_power
+    datapoint: 9
+
+
+select:
+  # Audio System
+  - platform: iq2020
+    name: Audio Source
+    id: audio_source
+    datapoint: 0
+  
+  # Lights
+  - platform: iq2020
+    name: Lights Color Underwater
+    id: lights1_color
+    datapoint: 1
+    options:
+      - Violet
+      - Blue
+      - Cyan
+      - Green
+      - White
+      - Yellow
+      - Red
+      - Cycle On
+      - Cycle Off
+
+fan:
+  - platform: iq2020
+    name: Jets 1
+    id: jets1
+    icon: "mdi:turbine"
+    datapoint: 0
+    speeds: 1
+  - platform: iq2020
+    name: Jets 2
+    id: jets2
+    icon: "mdi:turbine"
+    datapoint: 1
+    speeds: 2
+
+# Set "celsius" to "true" if using celsius units.
+climate:
+  - platform: iq2020
+    name: Temperature
+    celsius: false
+
+text_sensor:
+  - platform: iq2020
+    versionstr:
+      name: Version
+
+number:
+  # Audio System
+  - platform: iq2020
+    name: Audio Volume
+    id: audio_volume
+    datapoint: 0
+  - platform: iq2020
+    name: Audio Treble
+    id: audio_treble
+    datapoint: 1
+  - platform: iq2020
+    name: Audio Bass
+    id: audio_bass
+    datapoint: 2
+  - platform: iq2020
+    name: Audio Balance
+    id: audio_balance
+    datapoint: 3
+  - platform: iq2020
+    name: Audio Subwoofer
+    id: audio_subwoofer
+    datapoint: 4
+
+  # Salt Control
+  - platform: iq2020
+    id: salt_power
+    name: Salt System Power
+    datapoint: 5
+
+  # Lights
+  - platform: iq2020
+    id: lights1_intensity
+    name: Light Intensity Underwater
+    datapoint: 7
+    maximum: 3
+
+text:
+  - platform: iq2020
+    name: Text Top
+    id: song_title
+    datapoint: 0
+    mode: text
+  - platform: iq2020
+    name: Text Bottom
+    id: artist_name
+    datapoint: 1
+    mode: text
+
+binary_sensor:    
+  - platform: iq2020
+    salt_level_confirmed:
+      name: Salt Level Confirmed
+    status_state1:
+      name: Salt State 1
+    status_state2:
+      name: Salt1 State 2
+```
+
+</details>
+
+## 2019 Caldera Makena (Paradise series)
+
+Status: Works as expected.
+
+<img width="1216" height="513" alt="image" src="https://github.com/user-attachments/assets/a8c8e1e2-0498-480f-a413-77ac34b184c4" />
+
+<img width="1920" height="1440" alt="image" src="https://github.com/user-attachments/assets/520bd991-5625-4020-80a6-7896c164fb57" />
+
